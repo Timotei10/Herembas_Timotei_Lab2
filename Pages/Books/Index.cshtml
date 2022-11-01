@@ -1,9 +1,34 @@
 ﻿@page
-@model Herembas_Timotei_Lab2.Pages.Books.IndexModel
+@model public IndexModel(Herembas_Timotei_Lab2.Pages.Books)
 
-@{
-    ViewData["Title"] = "Index";
+{
+    _context = context;
 }
+public IList<Book>
+    Book { get;set; }
+    public BookData BookD { get; set; }
+    public int BookID { get; set; }
+    public int CategoryID { get; set; }
+    public async Task OnGetAsync(int? id, int? categoryID)
+    {
+    BookD = new BookData();
+
+    BookD.Books = await _context.Book
+    .Include(b => b.Publisher)
+    .Include(b =>b.BookCategories)
+    .ThenInclude(b =>b.Category)
+    .AsNoTracking()
+    .OrderBy(b => b.Title)
+    .ToListAsync();
+    if (id != null)
+    {
+    BookID = id.Value;
+    Book book = BookD.Books
+    .Where(i => i.ID == id.Value).Single();
+    BookD.Categories = book.BookCategories.Select(s => s.Category);
+    }
+    }
+
 
 <h1>Index</h1>
 
@@ -28,12 +53,21 @@
             <th>
                 @Html.DisplayNameFor(model => model.Book[0].Publisher.PublisherName)
             </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Book[0].BookCategories)
+                </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.Book) {
-        <tr>
+            @foreach (var item in Model.BookD.Books)
+    {
+        string selectedRow = "";
+        if (item.ID == Model.BookID)
+        {
+            selectedRow = "table-success";
+        }
+            <tr class="@selectedRow">
             <td>
                 @Html.DisplayFor(modelItem => item.Title)
             </td>
@@ -49,7 +83,16 @@
                 <td>
                     @Html.DisplayFor(modelItem => item.Publisher.PublisherName)
                 </td>
+
             <td>
+                <td>
+                    @{
+        foreach (var category in item.BookCategories)
+        {
+                            @category.Category.ID @: @category.Category.CategoryName <br />
+        }
+                    }
+                </td>
                 <a asp-page="./Edit" asp-route-id="@item.ID">Edit</a> |
                 <a asp-page="./Details" asp-route-id="@item.ID">Details</a> |
                 <a asp-page="./Delete" asp-route-id="@item.ID">Delete</a>
